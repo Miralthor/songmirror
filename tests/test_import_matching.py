@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from songmirror.engine.matching import track_key
+from songmirror.engine.targets.base import MirrorTarget
 from songmirror.services.import_matching import ImportMatcher, MatchResult
 
 
@@ -32,6 +33,16 @@ class FakeTarget:
 
     def fetch_track(self, target_id):
         return self._tracks.get(str(target_id))
+
+
+class NoFetchFakeTarget(FakeTarget):
+    """Uses the production MirrorTarget.fetch_track default (returns None)."""
+
+    def __init__(self, *, candidates=None, isrc=None):
+        super().__init__(candidates=candidates, isrc=isrc, tracks=None)
+
+    # Do not override with a working lookup — inherit the base default.
+    fetch_track = MirrorTarget.fetch_track
 
 
 def _track(**kwargs):
@@ -218,6 +229,59 @@ def test_cache_hit_duration_conflict_needs_review():
     assert any(c.reason == "cache_conflict" for c in result.candidates) or any(
         c.target_id == "studio" for c in result.candidates
     )
+
+
+def test_automatic_cache_hit_without_fetch_falls_through_to_search():
+    """Automatic cache ids are not exact when destination metadata cannot be fetched."""
+    cache_key = track_key("Runaway", "AURORA")
+    cache = {
+        "isrc": {},
+        "search": {cache_key: "cached-live"},
+        "manual": set(),
+    }
+    target = NoFetchFakeTarget(
+        candidates=[{
+            "id": "studio",
+            "name": "Runaway",
+            "artist": "AURORA",
+            "duration_ms": 243000,
+        }]
+    )
+    # Production default: fetch_track returns None.
+    assert target.fetch_track("cached-live") is None
+
+    matcher = ImportMatcher(target, cache)
+    result = matcher.match_track(_track())
+    assert result.status != "exact"
+    assert result.best is None or result.best.target_id != "cached-live" or not result.best.acceptable
+    assert target.search_queries, "automatic no-fetch cache hits must continue to catalog search"
+    assert any(c.reason == "cache_hint" and c.target_id == "cached-live" and not c.acceptable
+               for c in result.candidates) or any(c.target_id == "studio" for c in result.candidates)
+
+
+def test_manual_cache_mapping_stays_exact_without_fetch():
+    cache_key = track_key("Runaway", "AURORA")
+    cache = {
+        "isrc": {},
+        "search": {cache_key: "manual-1"},
+        "manual": {cache_key},
+    }
+    target = NoFetchFakeTarget(
+        candidates=[{
+            "id": "studio",
+            "name": "Runaway",
+            "artist": "AURORA",
+            "duration_ms": 243000,
+        }]
+    )
+    matcher = ImportMatcher(target, cache)
+    result = matcher.match_track(_track())
+    assert result.status == "exact"
+    assert result.best is not None
+    assert result.best.target_id == "manual-1"
+    assert result.best.reason == "manual_mapping"
+    assert result.best.acceptable is True
+    assert target.search_queries == []
 
 
 def test_fuzzy_high_confidence_auto_selects_best():
@@ -438,3 +502,349 @@ def test_provider_targets_expose_search_candidates(provider, method):
     cls = target_class(provider)
     assert cls is not None
     assert callable(getattr(cls, method, None))
+
+
+class _FailingThenOkSession:
+    """Session stub that fails with a transport error, then returns a payload."""
+
+    def __init__(self, *, failures=1, payload=None, status_code=200, error_cls=None):
+        import requests
+
+        self.failures = failures
+        self.payload = payload if payload is not None else {}
+        self.status_code = status_code
+        self.error_cls = error_cls or requests.ConnectionError
+        self.calls = 0
+
+    def request(self, method, url, **kwargs):
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise self.error_cls("simulated transport failure")
+
+        class Response:
+            def __init__(self, status_code, payload):
+                self.status_code = status_code
+                self.headers = {}
+                self.content = b"{}" if payload is not None else b""
+                self._payload = payload
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise requests.HTTPError(f"{self.status_code}", response=self)
+
+            def json(self):
+                return self._payload
+
+        return Response(self.status_code, self.payload)
+
+    def get(self, url, **kwargs):
+        return self.request("GET", url, **kwargs)
+
+
+@pytest.mark.parametrize(
+    "error_cls_name",
+    ["ConnectionError", "ReadTimeout"],
+)
+def test_amazon_request_boundary_promotes_connection_errors(monkeypatch, error_cls_name):
+    import requests
+
+    from songmirror.engine.targets.amazon_music import AmazonMusicTarget
+    from songmirror.engine.targets.base import TargetTransientError
+
+    error_cls = getattr(requests, error_cls_name)
+    monkeypatch.setattr("songmirror.engine.targets.amazon_music.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.amazon_music.random.uniform", lambda *_a, **_k: 0)
+
+    target = AmazonMusicTarget.__new__(AmazonMusicTarget)
+    target._api_key = "test-key"
+    target._session = _FailingThenOkSession(failures=99, error_cls=error_cls)
+    target._access = lambda force=False: "token"  # type: ignore[method-assign]
+    target._web = None
+
+    with pytest.raises(TargetTransientError):
+        target._request("POST", "search/tracks", json_body={"limit": 1})
+
+    # Exhausted GET retries should also become transient, not raw transport errors.
+    with pytest.raises(TargetTransientError):
+        target._request("GET", "me/playlists")
+    with pytest.raises(TargetTransientError):
+        # Ensure raw requests exceptions are not leaking through search wrappers.
+        target.search_candidates("Runaway")
+
+
+def test_amazon_graphql_boundary_promotes_read_timeout():
+    """Web GraphQL transport failures must surface as TargetTransientError.
+
+    If ReadTimeout escapes `_graphql()`, search wrappers catch Exception and
+    return [], which resolve() then caches as a permanent miss.
+    """
+    import requests
+
+    from songmirror.engine.targets.amazon_music import AmazonMusicTarget
+    from songmirror.engine.targets.base import TargetTransientError
+
+    class _TimeoutWeb:
+        def execute(self, *args, **kwargs):
+            raise requests.ReadTimeout("simulated read timeout")
+
+    target = AmazonMusicTarget.__new__(AmazonMusicTarget)
+    target._web = _TimeoutWeb()
+
+    with pytest.raises(TargetTransientError):
+        target._graphql("SongMirrorAmazonSearchTracks", "query Q { __typename }")
+    with pytest.raises(TargetTransientError):
+        target.search_candidates("Runaway")
+    with pytest.raises(TargetTransientError):
+        target.search_by_isrc("NOX9X1501010")
+
+
+def test_amazon_graphql_boundary_classifies_http_errors():
+    """HTTPError must be handled before RequestException so status mapping works."""
+    import requests
+
+    from songmirror.engine.targets.amazon_music import AmazonMusicTarget
+    from songmirror.engine.targets.base import TargetTransientError
+
+    class _HttpErrorWeb:
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+        def execute(self, *args, **kwargs):
+            response = requests.Response()
+            response.status_code = self.status_code
+            raise requests.HTTPError(
+                f"{self.status_code} Server Error",
+                response=response,
+            )
+
+    target_503 = AmazonMusicTarget.__new__(AmazonMusicTarget)
+    target_503._web = _HttpErrorWeb(503)
+    with pytest.raises(TargetTransientError, match="Amazon Music web HTTP 503"):
+        target_503._graphql("SongMirrorAmazonSearchTracks", "query Q { __typename }")
+
+    target_404 = AmazonMusicTarget.__new__(AmazonMusicTarget)
+    target_404._web = _HttpErrorWeb(404)
+    with pytest.raises(requests.HTTPError):
+        target_404._graphql("SongMirrorAmazonSearchTracks", "query Q { __typename }")
+
+
+def test_amazon_search_connection_error_does_not_cache_miss_and_retries(monkeypatch):
+    from songmirror.engine.targets.amazon_music import AmazonMusicTarget
+    from songmirror.engine.targets.base import TargetTransientError
+
+    monkeypatch.setattr("songmirror.engine.targets.amazon_music.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.amazon_music.random.uniform", lambda *_a, **_k: 0)
+    monkeypatch.setattr("songmirror.engine.targets.amazon_music.polite_sleep", lambda *_a, **_k: None)
+
+    target = AmazonMusicTarget.__new__(AmazonMusicTarget)
+    target._api_key = "test-key"
+    target._access = lambda force=False: "token"  # type: ignore[method-assign]
+    target._web = None
+    target._track_details = lambda ids: {}  # type: ignore[method-assign]
+
+    failing = _FailingThenOkSession(failures=99)
+    target._session = failing
+    cache = {"isrc": {}, "search": {}, "dirty": False}
+    track = {
+        "id": "src1",
+        "name": "Runaway",
+        "artists": ["Aurora"],
+        "duration_ms": 210000,
+    }
+
+    with pytest.raises(TargetTransientError):
+        target.resolve(track, cache)
+    assert "runaway|aurora" not in cache["search"]
+    assert failing.calls >= 1
+
+    recovered_payload = {
+        "data": {
+            "searchTracks": {
+                "edges": [
+                    {
+                        "node": {
+                            "id": "amz-1",
+                            "title": "Runaway",
+                            "artists": [{"name": "Aurora"}],
+                            "duration": 210,
+                            "isrc": "NOX9X1501010",
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    recovered = _FailingThenOkSession(failures=0, payload=recovered_payload)
+    target._session = recovered
+    target_id, method = target.resolve(track, cache)
+    assert method == "search"
+    assert target_id == "amz-1"
+    assert recovered.calls >= 1
+    assert cache["search"]["runaway|aurora"] == "amz-1"
+
+
+def test_apple_request_boundary_promotes_connection_errors(monkeypatch):
+    from songmirror.engine.targets.apple import AppleMusicTarget
+    from songmirror.engine.targets.base import TargetTransientError
+
+    monkeypatch.setattr("songmirror.engine.targets.apple.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.apple.random.uniform", lambda *_a, **_k: 0)
+
+    target = AppleMusicTarget.__new__(AppleMusicTarget)
+    target.tag = "apple"
+    target.storefront = "us"
+    target._session = _FailingThenOkSession(failures=99)
+
+    with pytest.raises(TargetTransientError):
+        target.search_candidates("Runaway")
+    with pytest.raises(TargetTransientError):
+        target.search_by_isrc("NOX9X1501010")
+
+
+def test_qobuz_request_boundary_promotes_connection_and_5xx_body(monkeypatch):
+    from songmirror.engine.targets.base import TargetAuthError, TargetTransientError
+    from songmirror.engine.targets.qobuz import QobuzTarget
+
+    monkeypatch.setattr("songmirror.engine.targets.qobuz.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.qobuz.random.uniform", lambda *_a, **_k: 0)
+
+    target = QobuzTarget.__new__(QobuzTarget)
+    target._browser_mode = True
+    target._app_id = "app"
+    target._user_token = "token"
+    target._user_id = None
+    target._session = _FailingThenOkSession(failures=99)
+
+    with pytest.raises(TargetTransientError):
+        target.search_candidates("Runaway")
+
+    class BodyResponse:
+        status_code = 200
+        headers = {}
+        content = b"{}"
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"code": 500, "message": "internal error"}
+
+    class BodySession:
+        def request(self, *args, **kwargs):
+            return BodyResponse()
+
+    target._session = BodySession()
+    with pytest.raises(TargetTransientError):
+        target._request("GET", "catalog/search", params={"query": "x"})
+
+    class AuthBodyResponse(BodyResponse):
+        def json(self):
+            return {"code": 401, "message": "bad credentials"}
+
+    class AuthBodySession:
+        def request(self, *args, **kwargs):
+            return AuthBodyResponse()
+
+    target._session = AuthBodySession()
+    with pytest.raises(TargetAuthError):
+        target._request("GET", "catalog/search", params={"query": "x"})
+
+
+def test_tidal_request_boundary_promotes_connection_errors(monkeypatch):
+    from songmirror.engine.targets.base import TargetTransientError
+    from songmirror.engine.targets.tidal import TidalTarget
+
+    monkeypatch.setattr("songmirror.engine.targets.tidal.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.tidal.random.uniform", lambda *_a, **_k: 0)
+
+    target = TidalTarget.__new__(TidalTarget)
+    target.country = "US"
+    target._access = lambda force=False: "token"  # type: ignore[method-assign]
+    target._session = _FailingThenOkSession(failures=99)
+
+    with pytest.raises(TargetTransientError):
+        target.search_candidates("Runaway")
+    with pytest.raises(TargetTransientError):
+        target.search_by_isrc("NOX9X1501010")
+
+
+def test_deezer_catalog_connection_error_propagates(monkeypatch):
+    from songmirror.engine.targets.base import TargetTransientError
+    from songmirror.engine.targets.deezer import DeezerTarget
+
+    monkeypatch.setattr("songmirror.engine.targets.deezer.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.deezer.random.uniform", lambda *_a, **_k: 0)
+
+    target = DeezerTarget.__new__(DeezerTarget)
+    target._web = object()  # force catalog path
+    target._token = None
+    target._session = _FailingThenOkSession(failures=99)
+
+    with pytest.raises(TargetTransientError):
+        target.search_candidates("Runaway")
+    with pytest.raises(TargetTransientError):
+        target.search_by_isrc("NOX9X1501010")
+
+
+def test_import_matcher_does_not_cache_isrc_miss_on_transient_error():
+    from songmirror.engine.targets.base import TargetTransientError
+
+    class TransientTarget(FakeTarget):
+        def search_by_isrc(self, isrc):
+            self.isrc_queries.append(isrc)
+            raise TargetTransientError("provider down")
+
+    cache = {"isrc": {}, "search": {}, "dirty": False}
+    matcher = ImportMatcher(TransientTarget(), cache)
+    with pytest.raises(TargetTransientError):
+        matcher.match_track(_track(isrc="NOX9X1501010"))
+    assert "NOX9X1501010" not in cache["isrc"]
+    assert cache["dirty"] is False
+
+
+def test_validate_target_id_rethrows_transient_errors():
+    from songmirror.engine.targets.base import TargetTransientError
+
+    class TransientFetchTarget(FakeTarget):
+        def fetch_track(self, target_id):
+            raise TargetTransientError("provider down")
+
+    matcher = ImportMatcher(TransientFetchTarget())
+    with pytest.raises(TargetTransientError):
+        matcher._validate_target_id("cached-id")
+
+
+def test_ytmusic_search_promotes_403_transport_errors(monkeypatch):
+    from songmirror.engine.targets.base import TargetTransientError
+    from songmirror.engine.targets.ytmusic import YTMusicTarget
+
+    monkeypatch.setattr("songmirror.engine.targets.ytmusic.time.sleep", lambda *_a, **_k: None)
+    monkeypatch.setattr("songmirror.engine.targets.ytmusic.random.uniform", lambda *_a, **_k: 0)
+
+    target = YTMusicTarget.__new__(YTMusicTarget)
+
+    class FailingSearch:
+        def search(self, *args, **kwargs):
+            raise RuntimeError("HTTP 403: bot detected")
+
+    target._ytm = FailingSearch()
+    with pytest.raises(TargetTransientError):
+        target.search_candidates("Runaway")
+    with pytest.raises(TargetTransientError):
+        target._search(
+            {"name": "Runaway", "artists": ["Aurora"], "duration_ms": 210000},
+            "Aurora",
+        )
+
+    class WeirdSearch:
+        def search(self, *args, **kwargs):
+            raise RuntimeError("weird")
+
+    target._ytm = WeirdSearch()
+    # Non-transport errors are not promoted to TargetTransientError; callers soft-miss.
+    assert target._promote_transport_error(RuntimeError("weird"), "songs") is None
+    assert target.search_candidates("Runaway") == []
+    assert target._search(
+        {"name": "Runaway", "artists": ["Aurora"], "duration_ms": 210000},
+        "Aurora",
+    ) == (None, None)

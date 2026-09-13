@@ -186,20 +186,21 @@ class ImportMatcher:
             and self.source_provider == self.destination_provider
             and source.get("source_track_id")
         ):
-            validated = self._validate_target_id(str(source["source_track_id"]), source)
-            if validated is not None:
-                candidate = self._to_candidate(
-                    validated,
-                    score=1.0,
-                    reason="same_provider_id",
-                    acceptable=True,
-                )
-                return MatchResult(
-                    status="exact",
-                    best=candidate,
-                    candidates=[candidate],
-                    confidence=1.0,
-                )
+            target_id = str(source["source_track_id"])
+            validated = self._validate_target_id(target_id)
+            # Same-provider ids are hard identity; fetch is display enrichment only.
+            candidate = self._to_candidate(
+                validated if validated is not None else self._display_stub(target_id, source),
+                score=1.0,
+                reason="same_provider_id",
+                acceptable=True,
+            )
+            return MatchResult(
+                status="exact",
+                best=candidate,
+                candidates=[candidate],
+                confidence=1.0,
+            )
 
         isrc_conflict: Optional[MatchCandidate] = None
         isrc = source.get("isrc")
@@ -218,10 +219,28 @@ class ImportMatcher:
                 isrc_conflict = isrc_match
 
         cache_conflict: Optional[MatchCandidate] = None
+        cache_hint: Optional[MatchCandidate] = None
         cache_key = self._cache_key(source)
         cached_id = (self.cache.get("search") or {}).get(cache_key)
         if cached_id:
-            validated = self._validate_target_id(str(cached_id), source)
+            target_id = str(cached_id)
+            is_manual = cache_key in (self.cache.get("manual") or set())
+            validated = self._validate_target_id(target_id)
+            if is_manual:
+                # Explicit user choice. Fetch is display-only; never fabricate
+                # compatibility evidence from the source track.
+                candidate = self._to_candidate(
+                    validated if validated is not None else self._display_stub(target_id, source),
+                    score=0.95,
+                    reason="manual_mapping",
+                    acceptable=True,
+                )
+                return MatchResult(
+                    status="exact",
+                    best=candidate,
+                    candidates=[candidate],
+                    confidence=0.95,
+                )
             if validated is not None:
                 if recording_metadata_compatible(source, _compat_view(validated)):
                     candidate = self._to_candidate(
@@ -244,13 +263,22 @@ class ImportMatcher:
                     reason="cache_conflict",
                     acceptable=False,
                 )
+            else:
+                # Automatic mappings without independently fetched destination
+                # metadata are search hints only — never exact matches.
+                cache_hint = self._to_candidate(
+                    self._display_stub(target_id, source),
+                    score=0.95,
+                    reason="cache_hint",
+                    acceptable=False,
+                )
 
         candidates = self._search_catalog(source)
         scored = self._score_candidates(source, candidates) if candidates else []
 
-        # Keep identity-shortcut conflicts visible for review when search finds
-        # nothing better.
-        for conflict in (isrc_conflict, cache_conflict):
+        # Keep identity-shortcut conflicts / hints visible for review when search
+        # finds nothing better.
+        for conflict in (isrc_conflict, cache_conflict, cache_hint):
             if conflict is None:
                 continue
             if any(item.target_id == conflict.target_id for item in scored):
@@ -266,7 +294,12 @@ class ImportMatcher:
         if best.acceptable and best.score >= HIGH_SCORE:
             status = "high"
             selected = best
-        elif best.score >= AMBIGUOUS_SCORE or isrc_conflict is not None or cache_conflict is not None:
+        elif (
+            best.score >= AMBIGUOUS_SCORE
+            or isrc_conflict is not None
+            or cache_conflict is not None
+            or cache_hint is not None
+        ):
             status = "ambiguous"
             selected = None
         else:
@@ -294,36 +327,40 @@ class ImportMatcher:
                 progress_callback(index + 1, total)
         return results
 
-    def _validate_target_id(self, target_id: str, source: Optional[dict] = None) -> Optional[dict]:
-        """Return metadata for a target id when the provider can still resolve it."""
+    def _validate_target_id(self, target_id: str) -> Optional[dict]:
+        """Return live provider metadata for a target id, or None if unavailable.
+
+        Never fabricate destination metadata from the source track. Callers that
+        already trust an id for other reasons (same-provider, manual mapping)
+        can build a display stub themselves; automatic cache hits must not.
+        """
         if not target_id:
             return None
         fetch = getattr(self.target, "fetch_track", None)
-        if callable(fetch):
-            try:
-                data = fetch(target_id)
-            except TargetAuthError:
-                raise
-            except Exception:
-                data = None
-            if data:
-                return data
+        if not callable(fetch):
+            return None
+        try:
+            data = fetch(target_id)
+        except TargetAuthError:
+            raise
+        except TargetTransientError:
+            raise
+        except Exception:
+            return None
+        return data or None
 
-        # Fall back to a metadata shell. Callers that only need the id (cache /
-        # same-provider) can still auto-select; search ranking uses richer rows.
-        shell = {
+    def _display_stub(self, target_id: str, source: dict) -> dict:
+        """Build display-only metadata for an already-trusted target id."""
+        return {
             "id": target_id,
-            "name": (source or {}).get("name") or "",
-            "artist": (source or {}).get("artist") or "",
-            "artists": (source or {}).get("artists") or [],
-            "album": (source or {}).get("album"),
-            "duration_ms": (source or {}).get("duration_ms"),
-            "image": (source or {}).get("image"),
+            "name": source.get("name") or "",
+            "artist": source.get("artist") or "",
+            "artists": source.get("artists") or [],
+            "album": source.get("album"),
+            "duration_ms": source.get("duration_ms"),
+            "image": source.get("image"),
             "external_url": track_url(self.destination_provider, target_id),
         }
-        # Without a live fetch, only trust same-provider / cache ids that already
-        # carry enough identity to score later if needed.
-        return shell
 
     def _search_by_isrc(self, isrc: str, source: dict) -> Optional[MatchCandidate]:
         """Search for a track by ISRC code."""

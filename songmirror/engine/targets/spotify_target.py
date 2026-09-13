@@ -15,7 +15,12 @@ from ..config import (
     DEFAULT_SPOTIFY_CACHE_FILE, polite_sleep, spotify_write_backend,
 )
 from ..matching import normalize_text, romanized, score_candidate, track_key
-from .base import MirrorTarget, TargetAuthError, TargetDirectoryIncompleteError
+from .base import (
+    MirrorTarget,
+    TargetAuthError,
+    TargetDirectoryIncompleteError,
+    TargetTransientError,
+)
 from .provider_utils import source_playlist_details
 
 
@@ -235,7 +240,16 @@ class SpotifyTarget(MirrorTarget):
                 lambda: self._sp.search(q=q, type="track", limit=limit),
                 "search",
             )
-        except spotipy.SpotifyException:
+        except spotipy.SpotifyException as e:
+            status = e.http_status
+            if status in (401, 403):
+                raise TargetAuthError(
+                    f"Spotify rejected search ({status})."
+                ) from e
+            if status == 429 or (isinstance(status, int) and status >= 500):
+                raise TargetTransientError(
+                    f"Spotify search temporary failure ({status})."
+                ) from e
             return []
         return (res.get("tracks") or {}).get("items", [])
 

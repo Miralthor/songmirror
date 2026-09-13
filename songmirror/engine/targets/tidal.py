@@ -24,7 +24,7 @@ from .. import archive
 from ..config import REQUEST_TIMEOUT, polite_sleep
 from ..logs import log_note, log_warn
 from ..matching import normalize_text, romanized, track_key
-from .base import MirrorTarget, TargetAuthError
+from .base import MirrorTarget, TargetAuthError, TargetTransientError
 from .provider_utils import (
     best_candidate, chunks, compatible_isrc_candidates, iso_duration_ms,
     source_playlist_details, title_with_version,
@@ -100,6 +100,7 @@ class TidalTarget(MirrorTarget):
 
     def _request(self, method, path, *, params=None, json_body=None):
         url = path if str(path).startswith("http") else f"{API}/{str(path).lstrip('/')}"
+        short = url.removeprefix(API + "/")
         attempts = 5
         refreshed = False
         idempotency_key = str(uuid.uuid4()) if method != "GET" else None
@@ -115,30 +116,38 @@ class TidalTarget(MirrorTarget):
                 response = self._session.request(
                     method, url, params=params, json=json_body, headers=headers, timeout=REQUEST_TIMEOUT
                 )
-            except requests.RequestException:
+            except requests.RequestException as exc:
                 if method == "GET" and attempt < attempts - 1:
                     time.sleep(min(2**attempt, 20) + random.uniform(0, 1.5))
                     continue
-                raise
+                raise TargetTransientError(
+                    f"TIDAL transport failure for {method} {short}: {exc}"
+                ) from exc
             if response.status_code == 401 and not refreshed:
                 self._access(force=True)
                 refreshed = True
                 continue
             if response.status_code in (401, 403):
                 raise TargetAuthError(
-                    f"TIDAL refused {method} {url.removeprefix(API + '/')} ({response.status_code}); "
+                    f"TIDAL refused {method} {short} ({response.status_code}); "
                     "capture a fresh web-player oauth2/token response in Accounts."
                 )
-            if response.status_code == 429 and attempt < attempts - 1:
-                wait = float(response.headers.get("Retry-After") or min(2**attempt, 15)) + random.uniform(0.5, 2)
-                time.sleep(wait)
-                continue
-            if response.status_code >= 500 and method == "GET" and attempt < attempts - 1:
-                time.sleep(min(2**attempt, 20) + random.uniform(0, 1.5))
-                continue
+            if response.status_code == 429:
+                if attempt < attempts - 1:
+                    wait = float(response.headers.get("Retry-After") or min(2**attempt, 15)) + random.uniform(0.5, 2)
+                    time.sleep(wait)
+                    continue
+                raise TargetTransientError(f"TIDAL kept returning HTTP 429 for {method} {short}")
+            if response.status_code >= 500:
+                if method == "GET" and attempt < attempts - 1:
+                    time.sleep(min(2**attempt, 20) + random.uniform(0, 1.5))
+                    continue
+                raise TargetTransientError(
+                    f"TIDAL kept returning HTTP {response.status_code} for {method} {short}"
+                )
             response.raise_for_status()
             return response
-        raise RuntimeError("TIDAL request retry budget exhausted")
+        raise TargetTransientError("TIDAL request retry budget exhausted")
 
     def _pages(self, path, params=None):
         next_url, next_params = path, dict(params or {})
@@ -599,6 +608,10 @@ class TidalTarget(MirrorTarget):
                     "countryCode": self.country,
                 },
             ).json()
+        except TargetAuthError:
+            raise
+        except TargetTransientError:
+            raise
         except Exception:
             return []
         result = next(
@@ -637,6 +650,10 @@ class TidalTarget(MirrorTarget):
                     "countryCode": self.country,
                 },
             ).json()
+        except TargetAuthError:
+            raise
+        except TargetTransientError:
+            raise
         except Exception:
             return []
         out = []

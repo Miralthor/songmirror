@@ -130,12 +130,15 @@ class AppleMusicTarget(MirrorTarget):
         for attempt in range(attempts):
             try:
                 r = self._session.request(method, url, params=params, json=json_body, timeout=REQUEST_TIMEOUT)
-            except requests.RequestException:
+            except requests.RequestException as exc:
                 # Connection reset / blip: retry GETs (idempotent) with backoff.
                 if method == "GET" and attempt < attempts - 1:
                     time.sleep(min(2 ** attempt, 20) + random.uniform(0, 2))
                     continue
-                raise
+                path = url.split("/v1/")[-1]
+                raise TargetTransientError(
+                    f"Apple Music transport failure for {method} {path}: {exc}"
+                ) from exc
             if r.status_code in (401, 403):
                 raise TargetAuthError(
                     f"Apple rejected {method} {url.split('/v1/')[-1]} ({r.status_code}). "
@@ -175,7 +178,15 @@ class AppleMusicTarget(MirrorTarget):
                     f"Apple Music kept returning HTTP {r.status_code} while reading {path} "
                     f"after {attempts} attempts; this read was abandoned and the next pass will retry it"
                 )
-            r.raise_for_status()
+            try:
+                r.raise_for_status()
+            except requests.HTTPError as exc:
+                if r.status_code == 429 or r.status_code >= 500:
+                    path = url.split("/v1/")[-1]
+                    raise TargetTransientError(
+                        f"Apple Music kept returning HTTP {r.status_code} for {method} {path}"
+                    ) from exc
+                raise
             return r
         return None
 
@@ -905,14 +916,60 @@ class AppleMusicTarget(MirrorTarget):
                 raise
             except TargetTransientError as e:
                 last_error = e
-                wait = float(e.retry_after or min(10 * (attempt + 1), 60)) + random.uniform(1, 3)
-                self._write_not_before = time.monotonic() + wait
+                # _request sets retry_after only for 429, which proves the write
+                # never ran. Other transient failures (5xx / transport loss) may
+                # have committed, so verify before any retransmission.
+                if e.retry_after is not None or "HTTP 429" in str(e):
+                    wait = float(e.retry_after or min(10 * (attempt + 1), 60)) + random.uniform(1, 3)
+                    self._write_not_before = time.monotonic() + wait
+                    log_warn(
+                        f"Apple rate-limited add {catalog_id}; preserving its queue position "
+                        f"and retrying after {int(wait)}s",
+                        tag=self.tag,
+                    )
+                    continue
+
+                cause = e.__cause__ if isinstance(e.__cause__, Exception) else e
+                status = self._error_status(cause)
+                wait = min(2 ** attempt, 20) + random.uniform(0, 2)
+                detail = self._error_detail(cause)
                 log_warn(
-                    f"Apple rate-limited add {catalog_id}; preserving its queue position "
-                    f"and retrying after {int(wait)}s",
+                    f"Apple add {catalog_id} returned "
+                    f"{('HTTP ' + str(status)) if status else 'a network error'}{detail}; "
+                    f"verifying the playlist before retrying",
                     tag=self.tag,
                 )
-                continue
+                time.sleep(wait)
+                self._rebuild_session()
+                landed = self._verify_add_landed(playlist, catalog_id, before_count)
+                if landed is True:
+                    log(f"  Apple confirmed {catalog_id} was added despite the error", tag=self.tag)
+                    return catalog_id
+                if landed is None:
+                    raise RuntimeError(
+                        f"Apple add {catalog_id} had an ambiguous outcome and the playlist "
+                        "could not be verified; stopping this ordered queue until the next pass"
+                    ) from e
+                track_label = self._catalog_track_label(catalog_id)
+                if not repaired:
+                    replacement = self._repair_catalog_id(catalog_id)
+                    repaired = True
+                    if replacement:
+                        log(
+                            f"  Apple replaced obsolete catalog id {catalog_id} with {replacement}",
+                            tag=self.tag,
+                        )
+                        catalog_id = replacement
+                        before_count = 0
+                        continue
+                if self._is_unwritable_track_error(cause):
+                    self._evict_catalog_id(catalog_id)
+                    log_warn(
+                        f"Apple cannot add {track_label}; "
+                        "quarantining this catalog match and continuing with later tracks",
+                        tag=self.tag,
+                    )
+                    return None
             except requests.RequestException as e:
                 status = self._error_status(e)
                 if status not in (408, 429) and status is not None and status < 500:
