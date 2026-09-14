@@ -236,7 +236,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "अपनी कनेक्टेड सेवाओं के बीच प्लेलिस्ट को मिरर करना शुरू करने के लिए एक सिंक बनाएं।",
   "Create Another": "एक और बनाएँ",
   "Create folder": "फ़ोल्डर बनाएं",
-  "Create Import": "आयात बनाएँ",
   "Create inside {{show}}. Enter a name, not a full path.": "{{show}} के अंदर बनाएं। एक नाम दर्ज करें, पूरा पथ नहीं.",
   "Create new": "नया बनाएं",
   "Create new (same name as pairing)": "नया बनाएं (युग्मन के समान नाम)",
@@ -403,7 +402,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "अपने साइन-इन किए गए TIDAL वेब प्लेयर पर पहले से जारी किए गए नवीकरणीय सत्र को आयात करें - किसी डेवलपर ऐप की आवश्यकता नहीं है।",
   "Import-ready track list": "आयात के लिए तैयार ट्रैक सूची",
   "Imported Playlist": "आयातित प्लेलिस्ट",
-  "Imports": "आयात",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "<strong1>APIs और सेवाओं → लाइब्रेरी</strong1> में, <strong2>YouTube डेटा API v3</strong2> सक्षम करें।",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "<strong1>Network</strong1> में, पृष्ठ को पुनः लोड करें, <code2/> के लिए फ़िल्टर करें, और उस अनुरोध का चयन करें।",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "Jellyfin में, <strong1>डैशबोर्ड → API Keys</strong1> (उन्नत के अंतर्गत) खोलें।",
@@ -511,7 +509,6 @@
   "Needs Review": "समीक्षा आवश्यक",
   "New destination playlist name": "नए गंतव्य प्लेलिस्ट का नाम",
   "New folder": "नया फ़ोल्डर",
-  "New Import": "नया आयात",
   "New pairing": "नई जोड़ी",
   "New playlist name": "नई प्लेलिस्ट का नाम",
   "New profile label": "नया प्रोफ़ाइल लेबल",
@@ -1135,5 +1132,11 @@
   "⇄ N-WAY": "⇄ एन-वे",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} जोड़ता/पास करता है · केवल जोड़ें",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} जोड़ता/पास करता है · निष्कासन प्रतिबिंबित नहीं होता",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} जोड़ता है, ≤{{jobMax2}} निष्कासन / pass{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} जोड़ता है, ≤{{jobMax2}} निष्कासन / pass{{removalNote}}",
+  "New playlist": "नई प्लेलिस्ट",
+  "Import history": "आयात इतिहास",
+  "Playlist creation": "प्लेलिस्ट बनाना",
+  "Loading import history…": "आयात इतिहास लोड हो रहा है…",
+  "Loading import history timed out. Please try again.": "आयात इतिहास लोड करने का समय समाप्त हो गया। कृपया फिर से प्रयास करें।",
+  "Find matches": "मेल खाते ट्रैक खोजें"
 }

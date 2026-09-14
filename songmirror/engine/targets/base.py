@@ -157,6 +157,11 @@ class MirrorTarget:
         """Provider catalog id represented by a manually pasted id or link."""
         return "" if value is None else str(value).strip()
 
+    @staticmethod
+    def search_cache_key(name, artists):
+        """Key used to look up this provider's saved track resolutions."""
+        return track_key(name, " ".join(artists))
+
     def occurrence_id(self, track):
         """Provider id for one physical playlist entry, when available."""
         for key in ("relationship_id", "playlistItemId", "setVideoId"):

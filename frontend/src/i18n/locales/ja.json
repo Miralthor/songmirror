@@ -236,7 +236,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "同期を作成して、接続されているサービス間でプレイリストのミラーリングを開始します。",
   "Create Another": "もう一つ作成",
   "Create folder": "フォルダーの作成",
-  "Create Import": "インポートを作成",
   "Create inside {{show}}. Enter a name, not a full path.": "{{show}}内に作成します。フルパスではなく名前を入力します。",
   "Create new": "新規作成",
   "Create new (same name as pairing)": "新規作成(ペアリングと同じ名前)",
@@ -403,7 +402,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "すでに発行されている更新可能なセッションをサインインしている TIDAL Web プレーヤーにインポートします。開発者アプリは必要ありません。",
   "Import-ready track list": "インポート可能なトラックリスト",
   "Imported Playlist": "インポートしたプレイリスト",
-  "Imports": "インポート",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "<strong1>APIs & Services → Library</strong1> で、<strong2>YouTube Data API v3</strong2> を有効にします。",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "<strong1>Network</strong1> で、ページをリロードし、<code2/> でフィルターし、そのリクエストを選択します。",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "Jellyfin で、<strong1>Dashboard → API Keys</strong1> (Advanced の下) を開きます。",
@@ -511,7 +509,6 @@
   "Needs Review": "要確認",
   "New destination playlist name": "新しい宛先プレイリスト名",
   "New folder": "新しいフォルダー",
-  "New Import": "新しいインポート",
   "New pairing": "新しいペアリング",
   "New playlist name": "新しいプレイリスト名",
   "New profile label": "新しいプロファイル ラベル",
@@ -1135,5 +1132,11 @@
   "⇄ N-WAY": "⇄ N-WAY",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} 追加 / パス · 追加のみ",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} 追加/パス・削除はミラーリングされません",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} 追加、≤{{jobMax2}} 削除 / pass{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} 追加、≤{{jobMax2}} 削除 / pass{{removalNote}}",
+  "New playlist": "新しいプレイリスト",
+  "Import history": "インポート履歴",
+  "Playlist creation": "プレイリストの作成",
+  "Loading import history…": "インポート履歴を読み込み中…",
+  "Loading import history timed out. Please try again.": "インポート履歴の読み込みがタイムアウトしました。もう一度お試しください。",
+  "Find matches": "一致する曲を検索"
 }

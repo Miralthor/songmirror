@@ -175,8 +175,11 @@ CREATE TABLE IF NOT EXISTS playlist_track_cache (
 CREATE INDEX IF NOT EXISTS idx_playlist_track_cache_track
 ON playlist_track_cache (provider, track_id)
 """,
-    # Create Playlist / import workflow. Jobs, parsed source tracks, and ranked
-    # destination candidates live here so review/resume survives restarts.
+]
+
+# Import history is independent of engine snapshots and namespace migrations.
+# Keep its schema available to both the engine and the lightweight UI store.
+IMPORT_SCHEMAS = [
     """
 CREATE TABLE IF NOT EXISTS playlist_import (
     id                       TEXT PRIMARY KEY,
@@ -250,6 +253,8 @@ ON playlist_import_candidate (import_id, position, rank)
 """,
 ]
 
+SCHEMAS += IMPORT_SCHEMAS
+
 # Columns whose values historically held a provider type (``spotify``,
 # ``tidal``, ...), but now hold an account-profile identity. Profile-aware
 # archive opens migrate them every time because an older headless CLI may write
@@ -286,6 +291,23 @@ ON CONFLICT(source, id) DO UPDATE SET
 
 def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def connect_imports(path):
+    """Open import storage without migrating unrelated engine state.
+
+    Import accounts already use profile ids. Running the engine's namespace
+    migration on every history/poll request adds hundreds of queries and takes
+    a write lock even when the caller only wants to read an empty history.
+    """
+    conn = sqlite3.connect(path, timeout=30, check_same_thread=False)
+    try:
+        for schema in IMPORT_SCHEMAS:
+            conn.execute(schema)
+        return conn
+    except Exception:
+        conn.close()
+        raise
 
 
 def connect(path, source_aliases=None):

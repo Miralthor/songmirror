@@ -236,7 +236,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "Bağlı hizmetleriniz arasında oynatma listelerini yansıtmaya başlamak için bir senkronizasyon oluşturun.",
   "Create Another": "Başka bir tane oluştur",
   "Create folder": "Klasör oluştur",
-  "Create Import": "İçe aktarma oluştur",
   "Create inside {{show}}. Enter a name, not a full path.": "{{show}}'nin içinde oluşturun. Tam yol değil, bir ad girin.",
   "Create new": "Yeni oluştur",
   "Create new (same name as pairing)": "Yeni oluştur (eşleştirmeyle aynı ad)",
@@ -403,7 +402,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "Oturum açmış olduğunuz TIDAL web oynatıcınıza zaten verilmiş olan yenilenebilir oturumu içe aktarın; geliştirici uygulamasına gerek yoktur.",
   "Import-ready track list": "İçe aktarmaya hazır parça listesi",
   "Imported Playlist": "İçe aktarılan çalma listesi",
-  "Imports": "İçe aktarmalar",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "<strong1>API'ler ve Hizmetler → Kütüphane</strong1>'de, <strong2>YouTube Verileri API v3</strong2>'yi etkinleştirin.",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "<strong1>Network</strong1>'de sayfayı yeniden yükleyin, <code2/> için filtreleyin ve bu isteği seçin.",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "Jellyfin'de, <strong1>Dashboard → API Keys</strong1>'yi (Gelişmiş altında) açın.",
@@ -511,7 +509,6 @@
   "Needs Review": "İnceleme gerekli",
   "New destination playlist name": "Yeni hedef oynatma listesi adı",
   "New folder": "Yeni klasör",
-  "New Import": "Yeni içe aktarma",
   "New pairing": "Yeni eşleştirme",
   "New playlist name": "Yeni çalma listesi adı",
   "New profile label": "Yeni profil etiketi",
@@ -1135,5 +1132,11 @@
   "⇄ N-WAY": "⇄ N-YOL",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} ekler / geçer · yalnızca ekler",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} ekleme / geçme · çıkarma işlemleri yansıtılmamış",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} ekler, ≤{{jobMax2}} çıkarmalar / geçiş{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} ekler, ≤{{jobMax2}} çıkarmalar / geçiş{{removalNote}}",
+  "New playlist": "Yeni çalma listesi",
+  "Import history": "İçe aktarma geçmişi",
+  "Playlist creation": "Çalma listesi oluşturma",
+  "Loading import history…": "İçe aktarma geçmişi yükleniyor…",
+  "Loading import history timed out. Please try again.": "İçe aktarma geçmişi yüklenirken zaman aşımına uğradı. Lütfen tekrar deneyin.",
+  "Find matches": "Eşleşmeleri bul"
 }

@@ -241,7 +241,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "Crea una sincronización para comenzar a duplicar listas de reproducción entre tus servicios conectados.",
   "Create Another": "Crear otra",
   "Create folder": "Crear carpeta",
-  "Create Import": "Crear importación",
   "Create inside {{show}}. Enter a name, not a full path.": "Crear dentro de {{show}}. Introduzca un nombre, no una ruta completa.",
   "Create new": "Crear nuevo",
   "Create new (same name as pairing)": "Crear nuevo (mismo nombre que el emparejamiento)",
@@ -408,7 +407,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "Importe la sesión renovable ya emitida a su reproductor web TIDAL que haya iniciado sesión; no se necesita ninguna aplicación de desarrollador.",
   "Import-ready track list": "Lista de pistas listas para importar",
   "Imported Playlist": "Lista importada",
-  "Imports": "Importaciones",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "En <strong1>APIs y servicios → Biblioteca</strong1>, habilite <strong2>YouTube Datos API v3</strong2>.",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "En <strong1>Network</strong1>, vuelva a cargar la página, filtre por <code2/> y seleccione esa solicitud.",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "En Jellyfin, abra <strong1>Dashboard → API Keys</strong1> (en Avanzado).",
@@ -517,7 +515,6 @@
   "Needs Review": "Necesita revisión",
   "New destination playlist name": "Nuevo nombre de la lista de reproducción de destino",
   "New folder": "Nueva carpeta",
-  "New Import": "Nueva importación",
   "New pairing": "Nuevo emparejamiento",
   "New playlist name": "Nuevo nombre de lista de reproducción",
   "New profile label": "Nueva etiqueta de perfil",
@@ -1167,5 +1164,11 @@
   "⇄ N-WAY": "⇄ N-WAY",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} agrega / pasa · solo agregar",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} agrega / pasa · eliminaciones no reflejadas",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} agrega, ≤{{jobMax2}} elimina / pasa{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} agrega, ≤{{jobMax2}} elimina / pasa{{removalNote}}",
+  "New playlist": "Nueva lista de reproducción",
+  "Import history": "Historial de importaciones",
+  "Playlist creation": "Creación de listas de reproducción",
+  "Loading import history…": "Cargando el historial de importaciones…",
+  "Loading import history timed out. Please try again.": "Se agotó el tiempo de espera al cargar el historial de importaciones. Inténtalo de nuevo.",
+  "Find matches": "Buscar coincidencias"
 }

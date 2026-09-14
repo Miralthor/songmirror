@@ -1,7 +1,8 @@
 import { t, useTranslation } from '@/i18n'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LuHistory } from 'react-icons/lu'
+import { LuHistory, LuRefreshCw } from 'react-icons/lu'
+import useSWR from 'swr'
 
 import { errorMessage, importApi } from '@/api'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +11,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pill } from '@/components/ui/Pill'
 import { ServiceLogo } from '@/components/ui/ServiceLogo'
-import { Spinner } from '@/components/ui/Spinner'
+import { LoadingStatus, Skeleton } from '@/components/ui/Skeleton'
 import { serviceLogoId, tagText } from '@/lib/constants'
 import { formatDateTime, formatTrackCount } from '@/lib/format'
 import type { ImportJob, ImportStatus } from '@/types'
@@ -68,28 +69,29 @@ function sourceKindLabel(kind: ImportJob['source_kind']): string {
 export default function Imports() {
   useTranslation()
   const navigate = useNavigate()
-  const [imports, setImports] = useState<ImportJob[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data: imports, error: loadError, isLoading: loading, isValidating, mutate } = useSWR(
+    '/api/imports',
+    importApi.listImports,
+    {
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
+      refreshInterval: (jobs) => jobs?.some((job) => ['parsing', 'matching', 'creating'].includes(job.status)) ? 3000 : 0,
+    },
+  )
+  const [actionError, setError] = useState('')
+  const error = actionError || (loadError ? errorMessage(loadError) : '')
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [resumingId, setResumingId] = useState<string | null>(null)
 
-  const loadImports = useCallback(async () => {
+  async function loadImports() {
+    setError('')
     try {
-      const jobs = await importApi.listImports()
-      setImports(jobs)
-      setError('')
-    } catch (err) {
-      setError(errorMessage(err))
-    } finally {
-      setLoading(false)
+      await mutate()
+    } catch {
+      // SWR exposes the refresh failure while retaining any previous rows.
     }
-  }, [])
-
-  useEffect(() => {
-    void loadImports()
-  }, [loadImports])
+  }
 
   async function handleDelete() {
     if (!pendingDeleteId) return
@@ -111,7 +113,7 @@ export default function Imports() {
     setError('')
     try {
       await importApi.resumeImport(id)
-      navigate(`/create-playlist?resume=${encodeURIComponent(id)}`)
+      navigate(`/playlists/create?resume=${encodeURIComponent(id)}`)
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -123,38 +125,39 @@ export default function Imports() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-text sm:text-[22px]">{t('Imports')}</h1>
+          <h2 className="text-[17px] font-bold text-text">{t('Import history')}</h2>
           <p className="mt-1 text-sm text-text-3">{t('Your playlist import history')}</p>
         </div>
-        <Button onClick={() => navigate('/create-playlist')}>{t('New Import')}</Button>
+        <Button variant="secondary" size="sm" icon={<LuRefreshCw className="size-4" aria-hidden="true" />} loading={isValidating} onClick={() => void loadImports()}>
+          {t('Refresh')}
+        </Button>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
-          {error}
-        </p>
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
+          <p>{error}</p>
+          {loadError && <Button variant="secondary" size="sm" onClick={() => void loadImports()} loading={isValidating}>{t('Retry')}</Button>}
+        </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
-      ) : imports.length === 0 ? (
+      {loading && !imports ? (
+        <LoadingStatus label={t('Loading import history…')}>
+          <p className="mb-3 text-sm text-text-3" aria-hidden="true">{t('Loading import history…')}</p>
+          <div className="space-y-3">
+            {[0, 1, 2].map((row) => <Skeleton key={row} className="h-24 w-full rounded-card" />)}
+          </div>
+        </LoadingStatus>
+      ) : imports?.length === 0 ? (
         <EmptyState
           title={t('No imports yet')}
           description={t('Create your first playlist import')}
           action={
-            <Link
-              to="/create-playlist"
-              className="mt-2 inline-flex items-center justify-center rounded-control bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
-            >
-              {t('Create Import')}
-            </Link>
+            <Button className="mt-2" onClick={() => navigate('/playlists/create')}>{t('Create Playlist')}</Button>
           }
         />
       ) : (
         <div className="space-y-3">
-          {imports.map((job) => {
+          {imports?.map((job) => {
             const logoId = serviceLogoId(job.source_provider || job.destination_account)
             const canResume = job.status === 'ready' || job.status === 'paused' || job.status === 'failed'
             const canDelete = !['creating', 'matching'].includes(job.status)
@@ -169,7 +172,7 @@ export default function Imports() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="truncate font-medium text-text">{job.destination_name}</div>
+                    <Link to={`/playlists/create?resume=${encodeURIComponent(job.id)}`} className="block truncate font-medium text-text hover:text-accent">{job.destination_name}</Link>
                     <div className="mt-0.5 text-sm text-text-3">
                       {sourceKindLabel(job.source_kind)} • {formatTrackCount(job.total_tracks)} •{' '}
                       {formatDateTime(job.created_at)}

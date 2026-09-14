@@ -236,7 +236,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "আপনার সংযুক্ত পরিষেবাগুলির মধ্যে প্লেলিস্টগুলিকে মিরর করা শুরু করতে একটি সিঙ্ক তৈরি করুন৷",
   "Create Another": "আরেকটি তৈরি করুন",
   "Create folder": "ফোল্ডার তৈরি করুন",
-  "Create Import": "ইমপোর্ট তৈরি করুন",
   "Create inside {{show}}. Enter a name, not a full path.": "{{show}} এর ভিতরে তৈরি করুন। একটি নাম লিখুন, একটি সম্পূর্ণ পথ নয়।",
   "Create new": "নতুন তৈরি করুন",
   "Create new (same name as pairing)": "নতুন তৈরি করুন (পেয়ারিং হিসাবে একই নাম)",
@@ -403,7 +402,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "আপনার সাইন-ইন করা TIDAL ওয়েব প্লেয়ারে ইতিমধ্যে জারি করা পুনর্নবীকরণযোগ্য সেশন আমদানি করুন—কোন বিকাশকারী অ্যাপের প্রয়োজন নেই।",
   "Import-ready track list": "আমদানি-প্রস্তুত ট্র্যাক তালিকা",
   "Imported Playlist": "ইমপোর্ট করা প্লেলিস্ট",
-  "Imports": "ইমপোর্ট",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "<strong1>APIs এবং পরিষেবা → লাইব্রেরিতে</strong1>, <strong2>YouTube ডেটা API v3</strong2> সক্ষম করুন।",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "<strong1>Network</strong1>-এ, পৃষ্ঠাটি পুনরায় লোড করুন, <code2/>-এর জন্য ফিল্টার করুন এবং সেই অনুরোধটি নির্বাচন করুন৷",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "Jellyfin-এ, <strong1>Dashboard খুলুন → API Keys</strong1> (উন্নত অধীনে)।",
@@ -511,7 +509,6 @@
   "Needs Review": "পর্যালোচনা প্রয়োজন",
   "New destination playlist name": "নতুন গন্তব্য প্লেলিস্টের নাম",
   "New folder": "নতুন ফোল্ডার",
-  "New Import": "নতুন ইমপোর্ট",
   "New pairing": "নতুন জুটি",
   "New playlist name": "নতুন প্লেলিস্টের নাম",
   "New profile label": "নতুন প্রোফাইল লেবেল",
@@ -1135,5 +1132,11 @@
   "⇄ N-WAY": "⇄ N-ওয়ে",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} যোগ/পাস · শুধুমাত্র যোগ করা",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} যোগ / পাস · অপসারণ মিরর করা হয় না",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} যোগ করে, ≤{{jobMax2}} অপসারণ / pass{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} যোগ করে, ≤{{jobMax2}} অপসারণ / pass{{removalNote}}",
+  "New playlist": "নতুন প্লেলিস্ট",
+  "Import history": "ইমপোর্টের ইতিহাস",
+  "Playlist creation": "প্লেলিস্ট তৈরি",
+  "Loading import history…": "ইমপোর্টের ইতিহাস লোড হচ্ছে…",
+  "Loading import history timed out. Please try again.": "ইমপোর্টের ইতিহাস লোড করার সময়সীমা শেষ হয়েছে। আবার চেষ্টা করুন।",
+  "Find matches": "মিলে যাওয়া ট্র্যাক খুঁজুন"
 }

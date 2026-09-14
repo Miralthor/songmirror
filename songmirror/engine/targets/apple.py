@@ -692,12 +692,19 @@ class AppleMusicTarget(MirrorTarget):
                 best_id, best_score = str(song["trackId"]), score
         return best_id
 
+    @staticmethod
+    def search_cache_key(name, artists):
+        # Preserve the existing Apple cache format, including punctuation and
+        # the primary artist, so manually saved selections remain reachable.
+        primary = artists[0] if artists else ""
+        return f"{name}|{primary}".casefold()
+
     def _search(self, name, artists, duration_ms, cache):
         primary = artists[0] if artists else ""
         public_term = f"{name} {' '.join(artists[:3])}".strip()
         if not f"{name} {primary}".strip():
             return None  # amp-api 400s on an empty term
-        key = f"{name}|{primary}".casefold()
+        key = self.search_cache_key(name, artists)
         if key in cache["search"]:
             return cache["search"][key]
         if self._search_throttled:
@@ -830,9 +837,8 @@ class AppleMusicTarget(MirrorTarget):
         for candidate in cache.get("isrc", {}).get(isrc, []):
             if str(candidate.get("id")) == str(catalog_id):
                 candidate["id"] = replacement
-        primary = artists[0] if artists else ""
         cache.setdefault("search", {})[
-            f"{track.get('name', '')}|{primary}".casefold()
+            self.search_cache_key(track.get("name", ""), artists)
         ] = replacement
         cache["dirty"] = True
         self._resolved_catalog_context.pop(str(catalog_id), None)

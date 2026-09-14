@@ -17,7 +17,6 @@ from ..engine.matching import (
     recording_metadata_compatible,
     romanized,
     score_candidate,
-    track_key,
 )
 from ..engine.targets import target_provider
 from ..engine.targets.base import MirrorTarget, TargetAuthError, TargetTransientError
@@ -544,4 +543,4 @@ class ImportMatcher:
         )
 
     def _cache_key(self, track: dict) -> str:
-        return track_key(track.get("name") or "", " ".join(_artists_of(track)))
+        return self.target.search_cache_key(track.get("name") or "", _artists_of(track))

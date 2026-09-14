@@ -375,8 +375,19 @@ export const importApi = {
     }),
 
   async listImports(): Promise<ImportJob[]> {
-    const res = await request<ImportListResponse>('/api/imports')
-    return res.jobs
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 10_000)
+    try {
+      const res = await request<ImportListResponse>('/api/imports', { signal: controller.signal })
+      return res.jobs
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new ApiError(0, t('Loading import history timed out. Please try again.'))
+      }
+      throw err
+    } finally {
+      window.clearTimeout(timeout)
+    }
   },
 
   getImport: (id: string, options?: { offset?: number; limit?: number }) => {

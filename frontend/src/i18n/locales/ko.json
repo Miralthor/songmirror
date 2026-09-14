@@ -236,7 +236,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "연결된 서비스 간에 재생 목록 미러링을 시작하려면 동기화를 생성하세요.",
   "Create Another": "하나 더 만들기",
   "Create folder": "폴더 생성",
-  "Create Import": "가져오기 만들기",
   "Create inside {{show}}. Enter a name, not a full path.": "{{show}} 내부에 생성합니다. 전체 경로가 아닌 이름을 입력하세요.",
   "Create new": "새로 만들기",
   "Create new (same name as pairing)": "새로 만들기(페어링과 동일한 이름)",
@@ -403,7 +402,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "로그인한 TIDAL 웹 플레이어에 이미 발급된 재생 가능한 세션을 가져옵니다. 개발자 앱은 필요하지 않습니다.",
   "Import-ready track list": "가져올 준비가 된 트랙 목록",
   "Imported Playlist": "가져온 플레이리스트",
-  "Imports": "가져오기",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "<strong1>APIs & Services → Library</strong1>에서 <strong2>YouTube 데이터 API v3</strong2>를 활성화합니다.",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "<strong1>Network</strong1>에서 페이지를 다시 로드하고 <code2/>를 필터링한 후 해당 요청을 선택합니다.",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "Jellyfin에서 <strong1>Dashboard → API Keys</strong1>(고급 아래)를 엽니다.",
@@ -511,7 +509,6 @@
   "Needs Review": "검토 필요",
   "New destination playlist name": "새로운 대상 재생목록 이름",
   "New folder": "새 폴더",
-  "New Import": "새 가져오기",
   "New pairing": "새로운 페어링",
   "New playlist name": "새 재생목록 이름",
   "New profile label": "새 프로필 라벨",
@@ -1135,5 +1132,11 @@
   "⇄ N-WAY": "⇄ N-WAY",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} 추가 / 통과 · 추가 전용",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} 추가/통과/제거는 미러링되지 않음",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} 추가, ≤{{jobMax2}} 제거 / pass{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} 추가, ≤{{jobMax2}} 제거 / pass{{removalNote}}",
+  "New playlist": "새 재생목록",
+  "Import history": "가져오기 기록",
+  "Playlist creation": "재생목록 만들기",
+  "Loading import history…": "가져오기 기록을 불러오는 중…",
+  "Loading import history timed out. Please try again.": "가져오기 기록을 불러오는 시간이 초과되었습니다. 다시 시도해 주세요.",
+  "Find matches": "일치하는 곡 찾기"
 }

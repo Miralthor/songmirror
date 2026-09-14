@@ -162,7 +162,9 @@ export default function CreatePlaylist() {
   const [existingPlaylistId, setExistingPlaylistId] = useState('')
   const [playlistName, setPlaylistName] = useState('')
   const [playlistDescription, setPlaylistDescription] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [working, setLoading] = useState(false)
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const loading = working || resumeLoading
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchModalTrack, setSearchModalTrack] = useState<ImportTrack | null>(null)
@@ -184,7 +186,7 @@ export default function CreatePlaylist() {
   const [assigning, setAssigning] = useState(false)
   const [expandedTrack, setExpandedTrack] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
-  const resumeHandledRef = useRef<string | null>(null)
+  const resumeId = searchParams.get('resume')
 
   const connectedAccounts = useMemo(() => accounts?.filter((a) => a.state === 'connected') ?? [], [accounts])
   const writableAccounts = useMemo(
@@ -225,13 +227,11 @@ export default function CreatePlaylist() {
   }, [settings?.create_playlist_default_source, sourceMethodTouched])
 
   useEffect(() => {
-    const resumeId = searchParams.get('resume')
-    if (!resumeId || resumeHandledRef.current === resumeId) return
-    resumeHandledRef.current = resumeId
+    if (!resumeId) return
 
     let cancelled = false
     void (async () => {
-      setLoading(true)
+      setResumeLoading(true)
       setError('')
       try {
         const data = await fetchImportWithAllTracks(resumeId)
@@ -254,14 +254,15 @@ export default function CreatePlaylist() {
       } catch (err) {
         if (!cancelled) setError(errorMessage(err))
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setResumeLoading(false)
       }
     })()
 
     return () => {
       cancelled = true
+      setResumeLoading(false)
     }
-  }, [searchParams, setSearchParams])
+  }, [resumeId, setSearchParams])
 
   useEffect(() => {
     setCurrentPage(0)
@@ -677,12 +678,6 @@ export default function CreatePlaylist() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-text sm:text-[22px]">{t('Create Playlist')}</h1>
-        <p className="mt-1 text-sm text-text-3">
-          {t('Build a playlist from text, a file, or a playlist link')}
-        </p>
-      </div>
 
       {error && (
         <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
@@ -889,7 +884,7 @@ export default function CreatePlaylist() {
 
           <div>
             <Button onClick={() => void handleCreate()} disabled={!canCreateImport} loading={loading}>
-              {t('Create Import')}
+              {t('Find matches')}
             </Button>
           </div>
         </>

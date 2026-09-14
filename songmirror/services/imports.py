@@ -151,8 +151,7 @@ class ImportService:
         return os.getenv("SONG_CACHE_FILE") or str(settings.data_dir / "song_cache.db")
 
     def _connect(self):
-        aliases = self._profiles.archive_aliases() if self._profiles is not None else None
-        return self.archive.connect(self._cache_path(), source_aliases=aliases)
+        return self.archive.connect_imports(self._cache_path())
 
     def _with_conn(self, callback):
         conn = self._connect()
@@ -535,7 +534,7 @@ class ImportService:
                         ]
             return row, tracks, candidates
 
-        payload = self._with_conn(read)
+        payload = await asyncio.to_thread(self._with_conn, read)
         if payload is None:
             raise ImportServiceError("import job not found")
         row, tracks, candidates = payload
@@ -546,7 +545,7 @@ class ImportService:
         )
 
     async def list_jobs(self) -> ImportListResponse:
-        rows = self._with_conn(self.archive.list_import_jobs)
+        rows = await asyncio.to_thread(self._with_conn, self.archive.list_import_jobs)
         return ImportListResponse(jobs=[self._job_from_row(row) for row in rows])
 
     async def recover_orphaned_jobs(self) -> int:

@@ -9,7 +9,7 @@ from songmirror.engine.targets.base import MirrorTarget
 from songmirror.services.import_matching import ImportMatcher, MatchResult
 
 
-class FakeTarget:
+class FakeTarget(MirrorTarget):
     name = "Fake"
     tag = "fake"
     source = "spotify"

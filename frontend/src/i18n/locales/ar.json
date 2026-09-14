@@ -256,7 +256,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "قم بإنشاء مزامنة لبدء عكس قوائم التشغيل بين الخدمات المتصلة.",
   "Create Another": "إنشاء أخرى",
   "Create folder": "إنشاء مجلد",
-  "Create Import": "إنشاء استيراد",
   "Create inside {{show}}. Enter a name, not a full path.": "قم بالإنشاء داخل {{show}}. أدخل اسمًا، وليس المسار الكامل.",
   "Create new": "إنشاء جديد",
   "Create new (same name as pairing)": "إنشاء جديد (نفس اسم الاقتران)",
@@ -423,7 +422,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "قم باستيراد الجلسة المتجددة التي تم إصدارها بالفعل إلى مشغل الويب TIDAL الذي قمت بتسجيل الدخول إليه - ليست هناك حاجة إلى تطبيق مطور.",
   "Import-ready track list": "قائمة الأغاني الجاهزة للاستيراد",
   "Imported Playlist": "قائمة تشغيل مستوردة",
-  "Imports": "الاستيرادات",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "في <strong1>APIs & Services → Library</strong1>، قم بتمكين <strong2>YouTube Data API v3</strong2>.",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "في <strong1>Network</strong1>، أعد تحميل الصفحة، وقم بالتصفية بحثًا عن <code2/>، ثم حدد هذا الطلب.",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "في Jellyfin، افتح <strong1>Dashboard → API Keys</strong1> (ضمن خيارات متقدمة).",
@@ -535,7 +533,6 @@
   "Needs Review": "يحتاج مراجعة",
   "New destination playlist name": "اسم قائمة تشغيل الوجهة الجديدة",
   "New folder": "مجلد جديد",
-  "New Import": "استيراد جديد",
   "New pairing": "اقتران جديد",
   "New playlist name": "اسم قائمة التشغيل الجديدة",
   "New profile label": "تسمية الملف الشخصي الجديدة",
@@ -1263,5 +1260,11 @@
   "⇄ N-WAY": "⇄ N-WAY",
   "≤{{jobMax}} adds / pass · append-only": "≥{{jobMax}} إضافة / تمرير · إلحاق فقط",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≥{{jobMax}} إضافة/تمرير · عمليات الإزالة غير معكوسة",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "يضيف ≥{{jobMax}}، ≥{{jobMax2}} عمليات الإزالة / pass{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "يضيف ≥{{jobMax}}، ≥{{jobMax2}} عمليات الإزالة / pass{{removalNote}}",
+  "New playlist": "قائمة تشغيل جديدة",
+  "Import history": "سجل الاستيراد",
+  "Playlist creation": "إنشاء قائمة تشغيل",
+  "Loading import history…": "جارٍ تحميل سجل الاستيراد…",
+  "Loading import history timed out. Please try again.": "انتهت مهلة تحميل سجل الاستيراد. يرجى المحاولة مجددًا.",
+  "Find matches": "البحث عن المطابقات"
 }

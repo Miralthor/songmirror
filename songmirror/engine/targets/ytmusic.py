@@ -861,7 +861,13 @@ class YTMusicTarget(MirrorTarget):
         letting resolve()/search soft-miss and cache None.
         """
         text = str(exc).lower()
-        if isinstance(exc, requests.RequestException) or any(
+        # ytmusicapi wraps non-200 responses in YTMusicServerError, whose
+        # status is exposed in "Server returned HTTP NNN", not a Response.
+        http_error = re.search(r"\bhttp\s+(\d{3})\b", text)
+        status = int(http_error[1]) if http_error else None
+        if isinstance(exc, requests.RequestException) or (
+            status == 408 or status is not None and 500 <= status < 600
+        ) or any(
             marker in text
             for marker in (
                 "connection",

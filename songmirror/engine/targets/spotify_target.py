@@ -8,6 +8,7 @@ needs no developer app; OAuth remains a compatible fallback.
 
 import os
 
+import requests
 import spotipy
 
 from .. import archive, spotify, spotify_cookie
@@ -233,13 +234,15 @@ class SpotifyTarget(MirrorTarget):
         return None, None
 
     def _query(self, q, *, limit=8):
-        if spotify_write_backend() == "cookie" or self._sp is None:
-            return spotify_cookie.search_tracks(q, limit=limit)
         try:
+            if spotify_write_backend() == "cookie" or self._sp is None:
+                return spotify_cookie.search_tracks(q, limit=limit)
             res = spotify._retry(
                 lambda: self._sp.search(q=q, type="track", limit=limit),
                 "search",
             )
+        except requests.RequestException as exc:
+            raise TargetTransientError(f"Spotify search transport failure: {exc}") from exc
         except spotipy.SpotifyException as e:
             status = e.http_status
             if status in (401, 403):

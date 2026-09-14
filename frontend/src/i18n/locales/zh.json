@@ -236,7 +236,6 @@
   "Create a sync to start mirroring playlists between your connected services.": "创建同步以开始在连接的服务之间镜像播放列表。",
   "Create Another": "再创建一个",
   "Create folder": "创建文件夹",
-  "Create Import": "创建导入",
   "Create inside {{show}}. Enter a name, not a full path.": "在{{show}}内创建。输入名称，而不是完整路径。",
   "Create new": "新建",
   "Create new (same name as pairing)": "创建新的（与配对同名）",
@@ -403,7 +402,6 @@
   "Import the renewable session already issued to your signed-in TIDAL web player—no developer app is needed.": "导入已发布到您登录的 TIDAL 网络播放器的可更新会话 - 不需要开发者应用程序。",
   "Import-ready track list": "导入就绪曲目列表",
   "Imported Playlist": "已导入的播放列表",
-  "Imports": "导入",
   "In <strong1>APIs & Services → Library</strong1>, enable the <strong2>YouTube Data API v3</strong2>.": "在 <strong1>API 和服务 → Library</strong1> 中，启用 <strong2>YouTube 数据 API v3</strong2>。",
   "In <strong1>Network</strong1>, reload the page, filter for <code2/>, and select that request.": "在 <strong1>Network</strong1> 中，重新加载页面，过滤 <code2/>，然后选择该请求。",
   "In Jellyfin, open <strong1>Dashboard → API Keys</strong1> (under Advanced).": "在Jellyfin中，打开<strong1>Dashboard→API Keys</strong1>（在高级下）。",
@@ -511,7 +509,6 @@
   "Needs Review": "需要审核",
   "New destination playlist name": "新目标播放列表名称",
   "New folder": "新建文件夹",
-  "New Import": "新建导入",
   "New pairing": "新配对",
   "New playlist name": "新播放列表名称",
   "New profile label": "新的个人资料标签",
@@ -1135,5 +1132,11 @@
   "⇄ N-WAY": "⇄ N 路",
   "≤{{jobMax}} adds / pass · append-only": "≤{{jobMax}} 添加/传递·仅附加",
   "≤{{jobMax}} adds / pass · removals not mirrored": "≤{{jobMax}} 添加/通过·删除未镜像",
-  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} 添加，≤{{jobMax2}} 删除 / pass{{removalNote}}"
+  "≤{{jobMax}} adds, ≤{{jobMax2}} removals / pass{{removalNote}}": "≤{{jobMax}} 添加，≤{{jobMax2}} 删除 / pass{{removalNote}}",
+  "New playlist": "新建播放列表",
+  "Import history": "导入历史",
+  "Playlist creation": "创建播放列表",
+  "Loading import history…": "正在加载导入历史…",
+  "Loading import history timed out. Please try again.": "加载导入历史超时，请重试。",
+  "Find matches": "查找匹配曲目"
 }
